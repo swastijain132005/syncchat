@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt'
 import usermodel from '../model/user.model.js'
 import { generateToken } from '../LIB/utils.js'
+import cloudinary from '../LIB/cloudinary.js'
 
 export const signup=async(req,res)=>{
         const {email,password,name,bio}=req.body;
@@ -12,11 +13,9 @@ export const signup=async(req,res)=>{
             const hashedPassword=await bcrypt.hash(password,10);
 
         const newUser=await usermodel.create({email,password:hashedPassword,name,bio});
-    
-            res.status(201).json({message:"User created successfully",user:newUser});
 
             const token=generateToken(newUser._id);
-            res.status(200).json({message:"User created successfully",token});
+            res.status(200).json({message:"User created successfully",token,user:newUser});
         }
         catch(error){
             console.log(error.message);
@@ -47,3 +46,54 @@ export const signup=async(req,res)=>{
 
         }
     }
+
+    export const checkAuth = (req, res) => {
+    res.status(200).json({
+        success: true,
+        user: req.user
+    });
+};
+
+
+// Controller to update user profile details
+export const updateProfile = async (req, res) => {
+    try {
+        const { profilePic, bio, fullName } = req.body;
+
+        const userId = req.user._id;
+        let updatedUser;
+
+        if (!profilePic) {
+            updatedUser = await User.findByIdAndUpdate(
+                userId,
+                { bio, fullName },
+                { new: true }
+            );
+        } else {
+            const upload = await cloudinary.uploader.upload(profilePic);
+
+            updatedUser = await User.findByIdAndUpdate(
+                userId,
+                {
+                    profilePic: upload.secure_url,
+                    bio,
+                    fullName,
+                },
+                { new: true }
+            );
+        }
+
+        res.json({
+            success: true,
+            user: updatedUser,
+        });
+
+    } catch (error) {
+        console.log(error.message);
+
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};

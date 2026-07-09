@@ -5,16 +5,53 @@ import mongoose from 'mongoose'
 import jwt from 'jsonwebtoken'
 import http from 'http'
 import { connectDB } from './LIB/db.js'
+import 'morgan';
+import userRouter from './routes/user.routes.js'
+import messageRouter from './routes/message.routes.js'
+import {server} from "socket.io"
 const PORT = process.env.PORT || 5000
 dotenv.config()
 
 const app = express()
 const server = http.createServer(app);
-//middleware setup
 
+
+export const io = new server(server, {
+    cors: {
+        origin: "*",
+    },
+});
+
+//store online users 
+export const usersocketmap={};//userid : socketid
+
+//socket.io connection handler 
+
+io.on("connection", (socket) => {
+    console.log("a user connected");
+    const userId = socket.handshake.query.userId;
+    if (!userId) {
+        console.error("User ID is missing");
+        return;
+    }
+    usersocketmap[userId] = socket.id;
+    //emit online user to all connected clients
+    io.emit("getonlineUsers", Object.keys(usersocketmap));
+    socket.on("disconnect", () => {
+        console.log("user disconnected");
+        delete usersocketmap[userId];
+            io.emit("getonlineUsers", Object.keys(usersocketmap));
+
+    });
+});
+//middleware setup
+app.use(morgan('dev'));
 app.use(express.json({ limit: '50mb' }));
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
+app.use("/api/users", userRouter);
+app.use("/api/messages", messageRouter);
+
 
 app.use("/api/status",(req,res) => {
     res.status(200).json({ message: "Status check successful" });

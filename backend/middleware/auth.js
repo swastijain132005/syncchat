@@ -2,7 +2,7 @@ import User from "../model/user.model.js";
 import jwt from "jsonwebtoken";
 
 // Middleware to protect routes
-export const protectRoute = async (req, res, next) => {
+export const authmiddleware = async (req, res, next) => {
   try {
     const token = req.headers.token;
 
@@ -28,3 +28,4 @@ export const protectRoute = async (req, res, next) => {
     });
   }
 };
+
