@@ -2,29 +2,80 @@ import React, { useEffect, useRef } from "react";
 import assets from "../assets/chat-app-assets/assets.js";
 import { messagesDummyData } from "../assets/chat-app-assets/assets.js";
 import { formatMessageTime } from "../lib/utils.js";
+import { useChatContext } from "../../context/Chatcontext.js";
+import { useAuth } from "../../context/Authcontext.jsx";
+import { toast } from "react-hot-toast";
+import { useState } from "react";
 
-const ChatContainer = ({ selectedUser, setSelectedUser }) => {
+const ChatContainer = () => {
   const scrollEnd = useRef(null);
+  const {messages,selectedUser,setSelectedUser,sendMessage,
+    subscribeToMessages,unsubscribeFromMessages,getMessagesForUser}=useChatContext();
+  const {logout,onlineUsers,user}=useAuth();
+  const [input,setInput]=useState("");
+
 
   useEffect(() => {
     if (scrollEnd.current) {
       scrollEnd.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messagesDummyData]);
+  }, [messages]);
+
+  const handleSendMessage=async(e)=>{
+    if(input.trim()===""){
+      return;
+    }
+      
+      await sendMessage({text:input.trim()});
+    
+  }
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+
+    if (!file || !file.type.startsWith("image/")) {
+        toast.error("Select an image");
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onloadend = async () => {
+        await sendMessage({
+            image: reader.result,
+        });
+    };
+
+    reader.readAsDataURL(file);
+    e.target.value = "";
+};
+
+useEffect(()=>{
+  if(selectedUser){
+    getMessagesForUser(selectedUser._id);
+  }
+},[selectedUser]);
+
+useEffect(()=>{
+  if(scrollEnd.current&&messages.length>0){
+    scrollEnd.current.scrollIntoView({ behavior: "smooth" });
+  }
+},[messages]);
 
   return selectedUser ? (
     <div className="h-full overflow-y-scroll relative backdrop-blur-lg">
       {/* ---------------- Header ---------------- */}
       <div className="flex items-center gap-3 py-3 mx-4 border-b border-stone-500">
         <img
-          src={assets.profile_martin}
+          src={selectedUser.profilePic||assets.avatar_icon}
           alt=""
           className="w-8 rounded-full"
         />
 
         <p className="flex-1 text-lg text-white flex items-center gap-2">
-          Martin Johnson
-          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+          {selectedUser?.name}
+          {onlineUsers.includes(selectedUser._id)&&
+          <span className="w-2 h-2 rounded-full bg-green-500"></span>}
         </p>
 
         <img
@@ -43,11 +94,11 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
 
       {/* ---------------- Chat Area ---------------- */}
       <div className="flex flex-col h-[calc(100%-120px)] overflow-y-auto p-3 pb-6">
-        {messagesDummyData.map((msg, index) => (
+        {messages.map((msg, index) => (
           <div
             key={index}
             className={`flex items-end gap-2 mb-4 ${
-              msg.senderId === "680f50e4f10f3cd28382ecf9"
+              msg.senderId === user._id
                 ? "justify-end"
                 : "flex-row-reverse justify-end"
             }`}
@@ -61,7 +112,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
             ) : (
               <p
                 className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg break-all text-white bg-violet-500/30 ${
-                  msg.senderId === "680f50e4f10f3cd28382ecf9"
+                  msg.senderId === user._id
                     ? "rounded-br-none"
                     : "rounded-bl-none"
                 }`}
@@ -73,8 +124,8 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
             <div className="text-center text-xs">
               <img
                 src={
-                  msg.senderId === "680f50e4f10f3cd28382ecf9"
-                    ? assets.avatar_icon
+                  msg.senderId === user._id
+                    ? user?.profilePic||assets.avatar_iconjj
                     : assets.profile_martin
                 }
                 alt=""
@@ -94,13 +145,18 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
       {/* ---------------- Bottom Area ---------------- */}
       <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 p-3">
         <div className="flex-1 flex items-center bg-gray-100/12 px-3 rounded-full">
-          <input
+          <input onChange={(e)=>setInput(e.target.value)} value={input} onKeyDown={(e)=>{
+            if(e.key==='Enter'){
+              handleSendMessage(e);
+              setInput("");
+            }
+          }}
             type="text"
             placeholder="Send a message"
             className="flex-1 text-sm p-3 border-none rounded-lg outline-none bg-transparent text-white placeholder-gray-400"
           />
 
-          <input
+          <input onChange={handleImageUpload}
             type="file"
             id="image"
             accept="image/png, image/jpeg"
@@ -116,11 +172,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
           </label>
         </div>
 
-        <img
-          src={assets.send_button}
-          alt=""
-          className="w-7 cursor-pointer"
-        />
+        <img onClick={handleSendMessage} src={assets.send_button} alt="" className="w-7 cursor-pointer"/>
       </div>
     </div>
   ) : (

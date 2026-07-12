@@ -8,6 +8,6 @@ messageRouter.use(authmiddleware);
 messageRouter.get("/sidebar", getUsersForSidebar);
 messageRouter.get("/:id", getMessages);
 messageRouter.put("/markAsSeen/:id", markMessageAsSeen);
-messageRouter.post("/send", sendMessage);
+messageRouter.post("/send/:id", sendMessage);
 
 export default messageRouter;

@@ -1,17 +1,41 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import assets from "../assets/chat-app-assets/assets.js";
+import {useAuth} from '../../context/Authcontext.jsx'
 
 const ProfilePage = () => {
   const navigate = useNavigate();
+  const {user,updateProfile}=useAuth();
 
   const [selectedImg, setSelectedImg] = useState(null);
-  const [fullName, setFullName] = useState("");
-  const [bio, setBio] = useState("Hi everyone");
-  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState(user.name);
+  const [bio, setBio] = useState(user.bio);
+  const [password, setPassword] = useState();
 
-  const onSubmitHandler = (e) => {
+  const onSubmitHandler = async(e) => {
     e.preventDefault();
+    if(!selectedImg){
+      await updateProfile({bio,fullName});
+      navigate("/");
+      return;
+    }
+    else{
+      const reader = new FileReader();
+
+reader.readAsDataURL(selectedImg);
+
+reader.onload = async () => {
+  const base64Image = reader.result;
+
+  await updateProfile({
+    profilePic: base64Image,
+    name: fullName,
+    bio,
+  });
+
+  navigate("/");
+};
+    }
 
     console.log({
       fullName,
@@ -94,9 +118,9 @@ const ProfilePage = () => {
 
         {/* Right */}
         <img
-          src={assets.logo_icon}
+          src={user?.profilePic || assets.avatar_icon}
           alt=""
-          className="max-w-44 aspect-square mx-10 max-sm:mt-10"
+          className={`max-w-44 aspect-square mx-10 max-sm:mt-10${selectedImg&&'rounded-full'}`}
         />
       </div>
     </div>

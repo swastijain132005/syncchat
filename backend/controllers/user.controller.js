@@ -15,7 +15,7 @@ export const signup=async(req,res)=>{
         const newUser=await usermodel.create({email,password:hashedPassword,name,bio});
 
             const token=generateToken(newUser._id);
-            res.status(200).json({message:"User created successfully",token,user:newUser});
+            res.status(200).json({success: true,message:"User created successfully",token,user:newUser});
         }
         catch(error){
             console.log(error.message);
@@ -37,7 +37,7 @@ export const signup=async(req,res)=>{
                 return res.status(400).json({message:"Invalid credentials"});
             }
             const token=generateToken(user._id);
-            res.status(200).json({message:"Login successful",token});
+            res.status(200).json({success: true,message:"Login successful",token, user});
 
         }
         catch(error){
@@ -47,37 +47,32 @@ export const signup=async(req,res)=>{
         }
     }
 
-    export const checkAuth = (req, res) => {
-    res.status(200).json({
-        success: true,
-        user: req.user
-    });
-};
+    
 
 
 // Controller to update user profile details
 export const updateProfile = async (req, res) => {
     try {
-        const { profilePic, bio, fullName } = req.body;
+        const { profilePic, bio, name} = req.body;
 
         const userId = req.user._id;
         let updatedUser;
 
         if (!profilePic) {
-            updatedUser = await User.findByIdAndUpdate(
+            updatedUser = await usermodel.findByIdAndUpdate(
                 userId,
-                { bio, fullName },
+                { bio, name},
                 { new: true }
             );
         } else {
             const upload = await cloudinary.uploader.upload(profilePic);
 
-            updatedUser = await User.findByIdAndUpdate(
+            updatedUser = await usermodel.findByIdAndUpdate(
                 userId,
                 {
                     profilePic: upload.secure_url,
                     bio,
-                    fullName,
+                    name
                 },
                 { new: true }
             );
@@ -85,6 +80,7 @@ export const updateProfile = async (req, res) => {
 
         res.json({
             success: true,
+            message:"Profile updated successfully",
             user: updatedUser,
         });
 
@@ -96,4 +92,11 @@ export const updateProfile = async (req, res) => {
             message: error.message,
         });
     }
+};
+
+export const checkAuth = (req, res) => {
+    res.status(200).json({
+        success: true,
+        user: req.user
+    });
 };

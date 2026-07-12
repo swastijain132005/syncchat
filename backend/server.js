@@ -5,10 +5,10 @@ import mongoose from 'mongoose'
 import jwt from 'jsonwebtoken'
 import http from 'http'
 import { connectDB } from './LIB/db.js'
-import 'morgan';
+import morgan from 'morgan'
 import userRouter from './routes/user.routes.js'
 import messageRouter from './routes/message.routes.js'
-import {server} from "socket.io"
+import {Server} from "socket.io"
 const PORT = process.env.PORT || 5000
 dotenv.config()
 
@@ -16,7 +16,7 @@ const app = express()
 const server = http.createServer(app);
 
 
-export const io = new server(server, {
+export const io = new Server(server, {
     cors: {
         origin: "*",
     },

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import assets from "../assets/chat-app-assets/assets.js";
+import {useAuth} from '../../context/Authcontext.jsx'
 
 export default function LoginPage() {
   const [currState, setCurrState] = useState("Sign up");
@@ -10,23 +11,27 @@ export default function LoginPage() {
   const [bio, setBio] = useState("");
 
   const [filled, setFilled] = useState(false);
+  const {login,logout}=useAuth();
 
-  const onSubmitHandler = (e) => {
+  const onSubmitHandler = async(e) => {
     e.preventDefault();
 
     if (currState === "Sign up" && !filled) {
       setFilled(true);
       return;
     }
+     await  login(currState==="Sign up"?"signup":"login",{name:fullName,email,password,bio});
+
 
     // Signup/Login API will go here
     console.log({
-      fullName,
+      FullName:fullName,
       email,
       password,
       bio,
     });
   };
+
 
   return (
     <div className="min-h-screen bg-cover bg-center flex items-center justify-center gap-8 sm:justify-evenly max-sm:flex-col backdrop-blur-2xl">

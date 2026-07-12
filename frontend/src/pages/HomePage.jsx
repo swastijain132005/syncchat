@@ -5,7 +5,7 @@ import RightSidebar from '../components/RightSidebar'
 import { useState } from 'react'
 
 const HomePage = () => {
-    const [selectedUser, setSelectedUser] = useState(null)
+  const {selectedUser}=useChatContext();
   return (
     <div className=" border w-full h-screen sm:px-[15%] sm:py-[5%] bg-[url('/src/assets/chat-app-assets/bgimage.svg')] bg-contain">
     <div
@@ -15,10 +15,10 @@ const HomePage = () => {
       : "md:grid-cols-2"
   }`}
 >
-    <Sidebar selectedUser={selectedUser} setSelectedUser={setSelectedUser}></Sidebar>
+    <Sidebar ></Sidebar>
 
-    <ChatContainer  selectedUser={selectedUser} setSelectedUser={setSelectedUser}></ChatContainer>
-    <RightSidebar  selectedUser={selectedUser} setSelectedUser={setSelectedUser}></RightSidebar>
+    <ChatContainer></ChatContainer>
+    <RightSidebar >jjjjj</RightSidebar>
     </div>
     </div>
   )
