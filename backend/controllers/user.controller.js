@@ -52,6 +52,7 @@ export const signup=async(req,res)=>{
 
 // Controller to update user profile details
 export const updateProfile = async (req, res) => {
+
     try {
         const { profilePic, bio, name} = req.body;
 
@@ -64,15 +65,22 @@ export const updateProfile = async (req, res) => {
                 { bio, name},
                 { new: true }
             );
-        } else {
-            const upload = await cloudinary.uploader.upload(profilePic);
+
+        }
+        
+        else {
+          const upload = await cloudinary.uploader.upload(profilePic);
+          console.log("Upload response:", upload);
+            console.log(upload.secure_url);
+console.log(upload.public_id);
 
             updatedUser = await usermodel.findByIdAndUpdate(
                 userId,
-                {
-                    profilePic: upload.secure_url,
-                    bio,
-                    name
+                {$set: {
+            profilePic: upload.secure_url,
+            bio,
+            name,
+        },
                 },
                 { new: true }
             );

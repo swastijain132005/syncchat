@@ -2,6 +2,7 @@ import React from 'react'
 import ChatContainer from '../components/ChatContainer'
 import Sidebar from '../components/Sidebar'
 import RightSidebar from '../components/RightSidebar'
+import { useChatContext } from '../../context/Chatcontext.jsx'
 import { useState } from 'react'
 
 const HomePage = () => {
@@ -18,7 +19,7 @@ const HomePage = () => {
     <Sidebar ></Sidebar>
 
     <ChatContainer></ChatContainer>
-    <RightSidebar >jjjjj</RightSidebar>
+    <RightSidebar ></RightSidebar>
     </div>
     </div>
   )

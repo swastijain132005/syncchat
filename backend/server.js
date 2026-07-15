@@ -9,6 +9,8 @@ import morgan from 'morgan'
 import userRouter from './routes/user.routes.js'
 import messageRouter from './routes/message.routes.js'
 import {Server} from "socket.io"
+import aiRouter from "./routes/ai.routes.js";
+
 const PORT = process.env.PORT || 5000
 dotenv.config()
 
@@ -51,6 +53,8 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/users", userRouter);
 app.use("/api/messages", messageRouter);
+app.use("/api/ai",aiRouter);
+
 
 
 app.use("/api/status",(req,res) => {

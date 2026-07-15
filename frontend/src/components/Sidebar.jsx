@@ -4,17 +4,17 @@ import assets, {
   
 } from "../assets/chat-app-assets/assets.js";
 import { useAuth } from "../../context/Authcontext.jsx";
-import { useChatContext } from "../../context/Chatcontext.js";
-import { useState } from "react";
+import { useChatContext } from "../../context/Chatcontext.jsx";
+import { useState ,useEffect} from "react";
 import { toast } from "react-hot-toast";
 
 const Sidebar = () => {
 
-  const {getAllUsers,users,selectedUser,setSelectedUser,unseenMessages,setunseenMessages}=useChatContext();
+  const {getAllUsers,users,selectedUser,setSelectedUser,unseenMessages,setUnseenMessages}=useChatContext();
   const navigate = useNavigate();
   const {logout,onlineUsers}=useAuth();
   const [input,setInput]=useState("");
-  const filteredUsers=input?users.filter(user=>user.fullName.toLowerCase().includes(input.toLowerCase())):users;
+  const filteredUsers=input?users.filter(user=>user.name.toLowerCase().includes(input.toLowerCase())):users;
 
   useEffect(()=>{
     getAllUsers();
@@ -83,7 +83,13 @@ const Sidebar = () => {
         {filteredUsers.map((user, index) => (
           <div
             key={user._id}
-            onClick={() => setSelectedUser(user),setUnseenMessages(prev=>({...prev,[user._id]:0}))}
+           onClick={() => {
+    setSelectedUser(user);
+    setUnseenMessages(prev => ({
+        ...prev,
+        [user._id]: 0
+    }));
+}}
             className={`relative flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-[#282142]/40 ${
               selectedUser?._id === user._id
                 ? "bg-[#282142]/60"
@@ -97,7 +103,7 @@ const Sidebar = () => {
             />
 
             <div className="flex flex-col">
-              <p className="font-medium">{user.fullName}</p>
+              <p className="font-medium">{user.name}</p>
 
               {onlineUsers.includes(user._id) ? (
                 <span className="text-green-400 text-xs">

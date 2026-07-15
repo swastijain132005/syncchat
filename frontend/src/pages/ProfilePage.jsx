@@ -15,7 +15,7 @@ const ProfilePage = () => {
   const onSubmitHandler = async(e) => {
     e.preventDefault();
     if(!selectedImg){
-      await updateProfile({bio,fullName});
+      await updateProfile({bio, name:fullName});
       navigate("/");
       return;
     }
@@ -37,14 +37,7 @@ reader.onload = async () => {
 };
     }
 
-    console.log({
-      fullName,
-      bio,
-      password,
-      selectedImg,
-    });
-
-    navigate("/");
+    
   };
 
   return (
@@ -78,11 +71,7 @@ reader.onload = async () => {
             />
 
             <img
-              src={
-                selectedImg
-                  ? URL.createObjectURL(selectedImg)
-                  : assets.avatar_icon
-              }
+              src={user?.profilePic || assets.avatar_icon}
               alt=""
               className="w-14 h-14 rounded-full object-cover"
             />

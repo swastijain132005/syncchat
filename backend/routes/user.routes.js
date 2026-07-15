@@ -6,10 +6,8 @@ const userRouter = express.Router();
 
 
 userRouter.get('/checkAuth',authmiddleware,checkAuth);
-userRouter.put("/updateProfile", (req, res) => {
-    console.log("UPDATE PROFILE ROUTE HIT");
-    res.json({ success: true });
-});
+userRouter.put("/updateProfile",authmiddleware,updateProfile);
+   
 userRouter.post('/signup',signup);
 userRouter.post('/login',login);
 

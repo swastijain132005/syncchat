@@ -3,7 +3,8 @@ import assets from "../assets/chat-app-assets/assets.js";
 import { messagesDummyData } from "../assets/chat-app-assets/assets.js";
 import { imagesDummyData } from "../assets/chat-app-assets/assets.js";
 import { useAuth } from "../../context/Authcontext.jsx";
-import { useChatContext } from "../../context/Chatcontext.js";
+import { useChatContext } from "../../context/Chatcontext.jsx";
+import { useState ,useEffect} from "react";
 
 const RightSidebar = () => {
 

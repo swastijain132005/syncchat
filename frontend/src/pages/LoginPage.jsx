@@ -39,7 +39,7 @@ export default function LoginPage() {
       <img
         src={assets.logo_big}
         alt=""
-        className="w-[min(30vw,250px)]"
+        className="w-64 max-w-[250px]"
       />
 
       {/* Right */}

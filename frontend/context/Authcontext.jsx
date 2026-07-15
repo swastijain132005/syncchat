@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setOnlineUsers([]);
 
-    if (socket) {
+    if (socket&&socket.connected) {
       socket.disconnect();
       setSocket(null);
     }
@@ -104,7 +104,9 @@ export const AuthProvider = ({ children }) => {
   const connectSocket = (userData) => {
     if (!userData) return;
 
-    if (socket) return;
+    if (socket?.connected) {
+      return;
+    }
 
     const newSocket = io(import.meta.env.VITE_BACKEND_URL, {
       query: {
@@ -129,7 +131,7 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       checkAuth();
     }
-  }, []);
+  }, [token]);
 
   // ---------------- CONTEXT VALUE ----------------
 

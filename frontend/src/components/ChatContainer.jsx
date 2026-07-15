@@ -2,10 +2,11 @@ import React, { useEffect, useRef } from "react";
 import assets from "../assets/chat-app-assets/assets.js";
 import { messagesDummyData } from "../assets/chat-app-assets/assets.js";
 import { formatMessageTime } from "../lib/utils.js";
-import { useChatContext } from "../../context/Chatcontext.js";
+import { useChatContext } from "../../context/Chatcontext.jsx";
 import { useAuth } from "../../context/Authcontext.jsx";
 import { toast } from "react-hot-toast";
 import { useState } from "react";
+import { useAI } from "../../context/AIcontext.jsx";
 
 const ChatContainer = () => {
   const scrollEnd = useRef(null);
@@ -13,6 +14,8 @@ const ChatContainer = () => {
     subscribeToMessages,unsubscribeFromMessages,getMessagesForUser}=useChatContext();
   const {logout,onlineUsers,user}=useAuth();
   const [input,setInput]=useState("");
+  const { getReplies } = useAI();
+  const [suggestions, setSuggestions] = useState([]);
 
 
   useEffect(() => {
@@ -27,6 +30,8 @@ const ChatContainer = () => {
     }
       
       await sendMessage({text:input.trim()});
+      setInput("");
+      setSuggestions([]);
     
   }
 
@@ -51,6 +56,7 @@ const ChatContainer = () => {
 };
 
 useEffect(()=>{
+  
   if(selectedUser){
     getMessagesForUser(selectedUser._id);
   }
@@ -62,6 +68,36 @@ useEffect(()=>{
   }
 },[messages]);
 
+
+useEffect(() => {
+    console.log("Messages:", messages);
+
+    if (!selectedUser) return;
+
+    if (messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+
+    console.log("Last Message:", lastMessage);
+
+    if (lastMessage.senderId !== selectedUser._id) {
+        console.log("Not friend's message");
+        return;
+    }
+
+    console.log("Calling AI...");
+
+    fetchReplies();
+
+    async function fetchReplies() {
+        const replies = await getReplies(lastMessage.text);
+
+        console.log("Replies:", replies);
+
+        setSuggestions(replies);
+    }
+
+}, [messages, selectedUser]);
   return selectedUser ? (
     <div className="h-full overflow-y-scroll relative backdrop-blur-lg">
       {/* ---------------- Header ---------------- */}
@@ -139,10 +175,62 @@ useEffect(()=>{
           </div>
         ))}
 
+        {
+
+<div className="absolute bottom-20 left-0 right-0 px-4">
+  <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+    {suggestions.map((reply, index) => (
+      <button
+        key={index}
+        onClick={async () => {
+          setInput(reply);
+
+          await sendMessage({
+            text: reply,
+          });
+
+          setInput("");
+          setSuggestions([]);
+        }}
+        className="
+          shrink-0
+          px-4
+          py-2
+          rounded-full
+          bg-gradient-to-r
+          from-violet-600
+          to-purple-500
+          hover:from-violet-700
+          hover:to-purple-600
+          text-white
+          text-sm
+          font-medium
+          shadow-md
+          transition-all
+          duration-200
+          hover:scale-105
+          active:scale-95
+          whitespace-nowrap
+        "
+      >
+        {reply}
+      </button>
+    ))}
+  </div>
+</div>
+
+}
+
+
         <div ref={scrollEnd}></div>
       </div>
 
       {/* ---------------- Bottom Area ---------------- */}
+      <div className="flex flex-wrap gap-3 mt-3">
+
+
+</div>
+
       <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 p-3">
         <div className="flex-1 flex items-center bg-gray-100/12 px-3 rounded-full">
           <input onChange={(e)=>setInput(e.target.value)} value={input} onKeyDown={(e)=>{
@@ -174,6 +262,7 @@ useEffect(()=>{
 
         <img onClick={handleSendMessage} src={assets.send_button} alt="" className="w-7 cursor-pointer"/>
       </div>
+
     </div>
   ) : (
     <div className="flex flex-col items-center justify-center gap-2 text-gray-500 bg-white/10 max-md:hidden">
