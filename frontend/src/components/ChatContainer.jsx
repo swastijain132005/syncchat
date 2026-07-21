@@ -7,15 +7,29 @@ import { useAuth } from "../../context/Authcontext.jsx";
 import { toast } from "react-hot-toast";
 import { useState } from "react";
 import { useAI } from "../../context/AIcontext.jsx";
+import SummaryModal from "./summarymodal.jsx";
+import ToneRewrite from "./Tonerewrite.jsx";
+import { DivideSquare } from "lucide-react";
+import MessageMenu from "./MessageMenu.jsx";
 
 const ChatContainer = () => {
   const scrollEnd = useRef(null);
   const {messages,selectedUser,setSelectedUser,sendMessage,
-    subscribeToMessages,unsubscribeFromMessages,getMessagesForUser}=useChatContext();
+    subscribeToMessages,unsubscribeFromMessages,getMessagesForUser,editMessage,deleteMessage,reactToMessage}=useChatContext();
   const {logout,onlineUsers,user}=useAuth();
   const [input,setInput]=useState("");
-  const { getReplies } = useAI();
+  const { getReplies ,getConversationSummary,loading,rewriteMessage ,translate} = useAI();
   const [suggestions, setSuggestions] = useState([]);
+  const [summary, setSummary] = useState("");
+const [showSummary, setShowSummary] = useState(false);
+const [showToneModal, setShowToneModal] = useState(false);
+const [translations, setTranslations] = useState({});
+const [editingMessageId, setEditingMessageId] = useState(null);
+
+const [editedText, setEditedText] = useState("");
+
+const [menuOpen, setMenuOpen] = useState(null);
+
 
 
   useEffect(() => {
@@ -54,6 +68,94 @@ const ChatContainer = () => {
     reader.readAsDataURL(file);
     e.target.value = "";
 };
+const handleSummary = async () => {
+  console.log(messages);
+
+  const aiSummary = await getConversationSummary(messages.slice(-100));
+  console.log(aiSummary);
+
+  if (aiSummary) {
+
+    setSummary(aiSummary);
+
+    setShowSummary(true);
+
+  }
+
+};
+
+const handleTranslate = async (msg) => {
+
+    if (translations[msg._id]) {
+
+        setTranslations((prev) => {
+
+            const copy = { ...prev };
+
+            delete copy[msg._id];
+
+            return copy;
+
+        });
+
+        return;
+
+    }
+
+    const translated = await translate(
+
+        msg.text,
+
+        "Hindi"
+
+    );
+
+    setTranslations((prev) => ({
+
+        ...prev,
+
+        [msg._id]: translated,
+
+    }));
+
+};
+
+const regenerateSummary = async () => {
+
+  const aiSummary = await getConversationSummary(messages);
+
+  setSummary(aiSummary);
+
+};
+
+const handleToneSelect = async (tone) => {
+
+    if (!input.trim()) {
+
+        toast.error("Type a message first");
+
+        return;
+
+    }
+
+    const rewritten = await rewriteMessage(
+
+        input,
+
+        tone
+
+    );
+
+    if (rewritten) {
+
+        setInput(rewritten);
+
+    }
+
+    setShowToneModal(false);
+
+};
+
 
 useEffect(()=>{
   
@@ -98,6 +200,15 @@ useEffect(() => {
     }
 
 }, [messages, selectedUser]);
+    const emojis = [
+  "😀",
+  "😂",
+  "❤️",
+  "👍",
+  "😮",
+  "😢"
+];
+
   return selectedUser ? (
     <div className="h-full overflow-y-scroll relative backdrop-blur-lg">
       {/* ---------------- Header ---------------- */}
@@ -121,18 +232,43 @@ useEffect(() => {
           className="md:hidden max-w-7 cursor-pointer"
         />
 
-        <img
-          src={assets.help_icon}
-          alt=""
-          className="max-md:hidden max-w-5 cursor-pointer"
-        />
+        <div className="flex items-center gap-4">
+
+    <button
+        onClick={handleSummary} 
+        className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-3 py-2 rounded-lg transition"
+    >
+        📄
+
+        <span className="hidden md:block">
+
+            Summary
+
+        </span>
+
+    </button>
+
+    <img
+        src={assets.help_icon}
+        alt=""
+        className="max-md:hidden max-w-5 cursor-pointer"
+    />
+
+</div>
       </div>
 
       {/* ---------------- Chat Area ---------------- */}
       <div className="flex flex-col h-[calc(100%-120px)] overflow-y-auto p-3 pb-6">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
+        {messages.map((msg, index) => {
+
+const counts = {};
+
+    msg.reactions?.forEach((react) => {
+        counts[react.emoji] = (counts[react.emoji] || 0) + 1;
+    });
+          
+         return <div
+            key={msg._id}
             className={`flex items-end gap-2 mb-4 ${
               msg.senderId === user._id
                 ? "justify-end"
@@ -146,16 +282,154 @@ useEffect(() => {
                 className="max-w-[230px] border border-gray-700 rounded-lg overflow-hidden"
               />
             ) : (
-              <p
+              <div
                 className={`p-2 max-w-[200px] md:text-sm font-light rounded-lg break-all text-white bg-violet-500/30 ${
+
+                  
                   msg.senderId === user._id
                     ? "rounded-br-none"
                     : "rounded-bl-none"
                 }`}
               >
-                {msg.text}
-              </p>
+
+                
+
+                {msg.senderId===user._id && (
+
+<MessageMenu
+    msg={msg}
+    menuOpen={menuOpen}
+    setMenuOpen={setMenuOpen}
+    setEditingMessageId={setEditingMessageId}
+    setEditedText={setEditedText}
+    deleteMessage={deleteMessage}
+/>
+
+)}
+
+
+
+
+{
+editingMessageId === msg._id ? (
+
+<div>
+
+<input
+value={editedText}
+onChange={(e)=>
+setEditedText(e.target.value)
+}
+/>
+
+<button
+onClick={async()=>{
+
+await editMessage(
+
+msg._id,
+
+editedText
+
+);
+
+setEditingMessageId(null);
+
+}}
+>
+
+Save
+
+</button>
+
+<button
+onClick={()=>{
+
+setEditingMessageId(null);
+
+}}
+>
+
+Cancel
+
+</button>
+
+</div>
+
+) : (
+
+<p>
+
+{msg.text}
+
+</p>
+
+
+)
+}
+
+
+
+
+  
+
+
+  
+
+                <button
+
+    onClick={() => handleTranslate(msg)}
+
+    className="text-xs text-violet-400 mt-1"
+
+>
+
+🌍 Translate
+
+</button>
+
+{translations[msg._id] && (
+
+<p className="mt-2 text-green-300 italic">
+
+{translations[msg._id]}
+
+</p>
+
+)}
+              </div>
+
+              
+              
             )}
+            <div className="flex gap-1 mt-2 flex-wrap">
+    {emojis.map((emoji) => (
+        <button
+            key={emoji}
+            onClick={() => reactToMessage(msg._id, emoji)}
+            className="hover:scale-125 transition"
+        >
+            {emoji}
+        </button>
+
+        
+    ))}
+</div>
+
+{Object.keys(counts).length > 0 && (
+    <div className="flex gap-2 mt-2 flex-wrap">
+        {Object.keys(counts).map((emoji) => (
+            <button
+                key={emoji}
+                onClick={() => reactToMessage(msg._id, emoji)}
+                className="bg-gray-700 rounded-full px-2 py-1 text-sm hover:bg-gray-600 transition"
+            >
+                {emoji} {counts[emoji]}
+            </button>
+        ))}
+    </div>
+)}
+
 
             <div className="text-center text-xs">
               <img
@@ -173,7 +447,7 @@ useEffect(() => {
               </p>
             </div>
           </div>
-        ))}
+})}
 
         {
 
@@ -259,9 +533,42 @@ useEffect(() => {
             />
           </label>
         </div>
+        <button
+
+    onClick={()=>setShowToneModal(true)}
+
+    className="text-violet-400 hover:text-violet-300 text-xl px-2"
+
+>
+
+✨
+
+</button>
 
         <img onClick={handleSendMessage} src={assets.send_button} alt="" className="w-7 cursor-pointer"/>
       </div>
+      <SummaryModal
+
+    open={showSummary}
+
+    summary={summary}
+
+    loading={loading}
+
+    onClose={() => setShowSummary(false)}
+
+    onRegenerate={regenerateSummary}
+
+/>
+<ToneRewrite
+
+    open={showToneModal}
+
+    onClose={()=>setShowToneModal(false)}
+
+    onSelect={handleToneSelect}
+
+/>
 
     </div>
   ) : (
@@ -271,7 +578,11 @@ useEffect(() => {
       <p className="text-lg font-medium text-white">
         Chat anytime, anywhere
       </p>
+
+
     </div>
+
+    
   );
 };
 

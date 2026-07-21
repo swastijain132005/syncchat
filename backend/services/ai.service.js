@@ -153,3 +153,137 @@ ${conversation}
     return response.data.choices[0].message.content.trim();
 
 };
+
+
+// ---------------- TONE REWRITE ----------------
+
+export const rewriteTone = async (message, tone) => {
+
+    const prompt = `
+
+Rewrite the following message.
+
+Rules:
+
+• Keep the same meaning.
+
+• Do NOT add extra information.
+
+• Return ONLY the rewritten message.
+
+Tone:
+
+${tone}
+
+Message:
+
+${message}
+
+`;
+
+    const response = await axios.post(
+
+        "https://openrouter.ai/api/v1/chat/completions",
+
+        {
+
+            model: "google/gemma-3-27b-it",
+
+            messages: [
+
+                {
+
+                    role: "user",
+
+                    content: prompt
+
+                }
+
+            ]
+
+        },
+
+        {
+
+            headers: {
+
+                Authorization:
+                    `Bearer ${process.env.OPENROUTER_API_KEY}`,
+
+                "Content-Type": "application/json"
+
+            }
+
+        }
+
+    );
+
+    return response.data.choices[0].message.content.trim();
+
+};
+
+// ---------------- TRANSLATE ----------------
+
+export const translateMessage = async (message, language) => {
+
+    const prompt = `
+
+Translate the following message.
+
+Rules:
+
+• Translate ONLY.
+
+• Do not explain.
+
+• Do not add extra words.
+
+Language:
+
+${language}
+
+Message:
+
+${message}
+
+`;
+
+    const response = await axios.post(
+
+        "https://openrouter.ai/api/v1/chat/completions",
+
+        {
+
+            model: "google/gemma-3-27b-it",
+
+            messages: [
+
+                {
+
+                    role: "user",
+
+                    content: prompt,
+
+                },
+
+            ],
+
+        },
+
+        {
+
+            headers: {
+
+                Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+
+                "Content-Type": "application/json",
+
+            },
+
+        }
+
+    );
+
+    return response.data.choices[0].message.content.trim();
+
+};

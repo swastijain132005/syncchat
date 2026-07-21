@@ -35,6 +35,30 @@ const {getReplies}=useAI();
         
     }
 
+    const reactToMessage = async (messageId,emoji) => {
+
+        try {
+            const { data } = await axios.put(`/api/messages/${messageId}/react`,{emoji:emoji});
+            if(data.success) {
+                const messageId=data.updatedMessage._id;
+                //setReactions(data.updatedMessage.reactions); no need as it is already set
+               setMessages((prev)=>{
+              const newmsgs=  prev.map((msg)=>{
+                   return  msg._id===messageId?data.updatedMessage:msg
+                        
+                    
+                })
+                                    return newmsgs;
+
+               }
+            
+            )
+        } }catch (error) {
+            toast.error(error.message);
+            console.log(error);
+        }
+    };
+
 //function to get all messages for selected user
 const getMessagesForUser=async(userId)=>{
     try{
@@ -52,7 +76,7 @@ const getMessagesForUser=async(userId)=>{
 // function to send message
 const sendMessage=async(message)=>{
     try{
-        const {data}= await axios.post(`/api/messages/send/${selectedUser._id}`,message);
+        const {data}= await axios.post(`/api/messages/send/${selectedUser._id}`,{text:message});
         if (data.success) {
 setMessages(prev => [...prev, data.newMessage]);        }
     }
@@ -61,6 +85,73 @@ setMessages(prev => [...prev, data.newMessage]);        }
         console.log(error);
     }
 }
+
+
+// Function to edit message
+const editMessage = async (messageId, text) => {
+    try {
+
+        const { data } = await axios.put(
+            `/api/messages/edit/${messageId}`,
+            { text }
+        );
+
+        if (data.success) {
+
+            setMessages((prev) =>
+                prev.map((msg) =>
+                    msg._id === messageId
+                        ? data.updatedMessage
+                        : msg
+                )
+            );
+
+            toast.success("Message updated");
+        }
+
+    } catch (error) {
+
+        toast.error(
+            error.response?.data?.message || error.message
+        );
+
+        console.log(error);
+
+    }
+};
+
+// Function to delete message
+const deleteMessage = async (messageId) => {
+
+    try {
+
+        const { data } = await axios.delete(
+            `/api/messages/delete/${messageId}`
+        );
+
+        if (data.success) {
+
+            setMessages((prev) =>
+                prev.filter(
+                    (msg) => msg._id !== messageId
+                )
+            );
+
+            toast.success("Message deleted");
+
+        }
+
+    } catch (error) {
+
+        toast.error(
+            error.response?.data?.message || error.message
+        );
+
+        console.log(error);
+
+    }
+
+};
 
 // Function to subscribe to incoming messages
 const subscribeToMessages = async() => {
@@ -102,6 +193,30 @@ const subscribeToMessages = async() => {
             ]);
         }
     });
+
+    const subscribeToMessages = async () => {
+
+    if (!socket) return;
+
+    socket.on("newMessage", async (newMessage) => {
+
+        // existing code
+
+    });
+
+    socket.on("newReaction", (updatedMessage) => {
+
+        setMessages((prev) =>
+            prev.map((msg) =>
+                msg._id === updatedMessage._id
+                    ? updatedMessage
+                    : msg
+            )
+        );
+
+    });
+
+};
 };
 
 
@@ -111,6 +226,7 @@ const unsubscribeFromMessages = () => {
 
     // Remove the "newMessage" event listener from the server
     socket.off("newMessage");
+    socket.off("newReaction");
 };
 
 useEffect(() => {
@@ -133,7 +249,10 @@ useEffect(() => {
         getMessagesForUser,
         sendMessage,
         subscribeToMessages,
-        unsubscribeFromMessages
+        unsubscribeFromMessages,
+        editMessage,
+        reactToMessage,
+deleteMessage,
 
 
     }

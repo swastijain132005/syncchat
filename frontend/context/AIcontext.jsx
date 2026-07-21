@@ -1,4 +1,5 @@
 import {createContext,useContext,useState} from "react";
+import {toast} from "react-hot-toast";
 
 import {useAuth} from "./Authcontext";
 
@@ -51,6 +52,111 @@ setLoading(false);
 
 };
 
+
+const getConversationSummary = async (messages) => {
+
+        try {
+
+            setLoading(true);
+
+            const { data } = await axios.post(
+                "/api/ai/summary",
+                {
+                    messages,
+                }
+            );
+
+            if (data.success) {
+
+                return data.summary;
+
+            }
+
+            return "";
+
+        } catch (error) {
+
+            console.log(error);
+
+            toast.error("Failed to summarize conversation");
+
+            return "";
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    };
+
+    const rewriteMessage = async (message, tone) => {
+    try {
+
+        setLoading(true);
+
+        const { data } = await axios.post(
+            "/api/ai/toneRewrite",
+            {
+                message,
+                tone,
+            }
+        );
+
+        if (data.success) {
+            return data.rewritten;
+        }
+
+        return "";
+
+    } catch (error) {
+
+        console.log(error);
+
+        toast.error("Failed to rewrite message.");
+
+        return "";
+
+    } finally {
+
+        setLoading(false);
+
+    }
+};
+
+const translate = async (message, language) => {
+
+    try {
+
+        setLoading(true);
+
+        const { data } = await axios.post(
+
+            "/api/ai/translate",
+
+            {
+
+                message,
+
+                language,
+
+            }
+
+        );
+
+        return data.translated;
+
+    }
+
+    finally {
+
+        setLoading(false);
+
+    }
+
+};
+
+
 return(
 
 <AIContext.Provider
@@ -58,6 +164,9 @@ return(
 value={{
 
 getReplies,
+getConversationSummary,
+rewriteMessage,
+translate,
 
 loading
 
@@ -72,5 +181,8 @@ loading
 );
 
 };
+
+
+
 
 export const useAI=()=>useContext(AIContext);
