@@ -442,9 +442,15 @@ Cancel
                 className="w-7 rounded-full"
               />
 
-              <p className="text-gray-500">
-                {formatMessageTime(msg.createdAt)}
-              </p>
+              <div className="flex items-center gap-1 text-xs text-gray-400">
+    <span>{formatMessageTime(msg.createdAt)}</span>
+
+    {msg.senderId === user._id && (
+        <span>
+            {msg.seen ? "✓✓" : "✓"}
+        </span>
+    )}
+</div>
             </div>
           </div>
 })}

@@ -76,7 +76,7 @@ const getMessagesForUser=async(userId)=>{
 // function to send message
 const sendMessage=async(message)=>{
     try{
-        const {data}= await axios.post(`/api/messages/send/${selectedUser._id}`,{text:message});
+        const {data}= await axios.post(`/api/messages/send/${selectedUser._id}`,message);
         if (data.success) {
 setMessages(prev => [...prev, data.newMessage]);        }
     }
@@ -216,6 +216,22 @@ const subscribeToMessages = async() => {
 
     });
 
+    socket.on("messagesSeen", (seenMessages) => {
+
+    setMessages((prev) =>
+        prev.map((msg) => {
+
+            const seenMessage = seenMessages.find(
+                (m) => m._id === msg._id
+            );
+
+            return seenMessage ? seenMessage : msg;
+
+        })
+    );
+
+});
+
 };
 };
 
@@ -227,6 +243,7 @@ const unsubscribeFromMessages = () => {
     // Remove the "newMessage" event listener from the server
     socket.off("newMessage");
     socket.off("newReaction");
+    socket.off("messagesSeen");
 };
 
 useEffect(() => {
