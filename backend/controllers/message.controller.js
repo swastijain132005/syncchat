@@ -59,11 +59,36 @@ export const getMessages = async (req, res) => {
     });
 
     await Message.updateMany(
-      { senderId: selectedUserId, receiverId: myId },
-      { seen: true }
-    );
+    {
+        senderId: selectedUserId,
+        receiverId: myId,
+        seen: false,
+    },
+    {
+        seen: true,
+    }
+);
 
-    res.json({ success: true, messages });
+// Get all newly seen messages
+const seenMessages = await Message.find({
+    senderId: selectedUserId,
+    receiverId: myId,
+    seen: true,
+});
+
+const senderSocketId = usersocketmap[selectedUserId];
+
+if (senderSocketId) {
+    io.to(senderSocketId).emit(
+        "messagesSeen",
+        seenMessages
+    );
+}
+
+res.json({
+    success: true,
+    messages,
+});
 
   } catch (error) {
     console.log(error.message);
