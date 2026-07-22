@@ -93,20 +93,20 @@ OpenRouter LLM API
 ```
 SyncChat
 │
-├── client
+├── frontend
 │   ├── components
-│   ├── pages
+│   
 │   ├── context
-│   ├── assets
-│   └── lib
+│   ├── src
+│   └── utils
 │
-├── server
+├── backend
 │   ├── controllers
 │   ├── models
 │   ├── routes
 │   ├── middleware
-│   ├── config
-│   └── socket
+│   ├── service
+│   
 │
 └── README.md
 ```
