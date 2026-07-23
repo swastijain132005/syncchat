@@ -30,21 +30,73 @@ export const usersocketmap={};//userid : socketid
 //socket.io connection handler 
 
 io.on("connection", (socket) => {
-    console.log("a user connected");
+
+    console.log("A user connected");
+
     const userId = socket.handshake.query.userId;
+
     if (!userId) {
-        console.error("User ID is missing");
+        console.log("User ID missing");
         return;
     }
+
+    // Save socket id
     usersocketmap[userId] = socket.id;
-    //emit online user to all connected clients
+
+    // Send online users to everyone
     io.emit("getonlineUsers", Object.keys(usersocketmap));
-    socket.on("disconnect", () => {
-        console.log("user disconnected");
-        delete usersocketmap[userId];
-            io.emit("getonlineUsers", Object.keys(usersocketmap));
+
+    // =========================
+    // Typing Indicator
+    // =========================
+    
+
+    socket.on("typing", ({ receiverId, senderName }) => {
+        console.log("SERVER GOT TYPING");
+    console.log(receiverId);
+    console.log(senderName);
+
+        const receiverSocketId = usersocketmap[receiverId];
+        console.log(receiverSocketId);
+
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit(
+                "typing",
+                senderName
+            );
+        }
 
     });
+
+    socket.on("stopTyping", ({ receiverId }) => {
+
+        const receiverSocketId = usersocketmap[receiverId];
+
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit(
+                "stopTyping"
+            );
+        }
+
+    });
+
+    // =========================
+    // Disconnect
+    // =========================
+
+    socket.on("disconnect", () => {
+
+        console.log("User disconnected");
+
+        delete usersocketmap[userId];
+
+        io.emit(
+            "getonlineUsers",
+            Object.keys(usersocketmap)
+        );
+
+    });
+
 });
 //middleware setup
 app.use(morgan('dev'));

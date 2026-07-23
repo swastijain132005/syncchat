@@ -14,9 +14,10 @@ import MessageMenu from "./MessageMenu.jsx";
 
 const ChatContainer = () => {
   const scrollEnd = useRef(null);
+  const typingTimeout = useRef(null);
   const {messages,selectedUser,setSelectedUser,sendMessage,
-    subscribeToMessages,unsubscribeFromMessages,getMessagesForUser,editMessage,deleteMessage,reactToMessage}=useChatContext();
-  const {logout,onlineUsers,user}=useAuth();
+    subscribeToMessages,unsubscribeFromMessages,getMessagesForUser,editMessage,deleteMessage,reactToMessage,typingUser}=useChatContext();
+  const {logout,onlineUsers,user,socket}=useAuth();
   const [input,setInput]=useState("");
   const { getReplies ,getConversationSummary,loading,rewriteMessage ,translate} = useAI();
   const [suggestions, setSuggestions] = useState([]);
@@ -29,6 +30,7 @@ const [editingMessageId, setEditingMessageId] = useState(null);
 const [editedText, setEditedText] = useState("");
 
 const [menuOpen, setMenuOpen] = useState(null);
+
 
 
 
@@ -209,6 +211,31 @@ useEffect(() => {
   "😢"
 ];
 
+
+const handleTyping = (e) => {
+
+    const value = e.target.value;
+
+    setInput(value);
+
+    socket.emit("typing", {
+        receiverId: selectedUser._id,
+        senderName: user.name,
+    });
+
+    if (typingTimeout.current) {
+        clearTimeout(typingTimeout.current);
+    }
+
+    typingTimeout.current = setTimeout(() => {
+
+        socket.emit("stopTyping", {
+            receiverId: selectedUser._id,
+        });
+
+    }, 10000);   // ← Change this
+
+};
   return selectedUser ? (
     <div className="h-full overflow-y-scroll relative backdrop-blur-lg">
       {/* ---------------- Header ---------------- */}
@@ -219,12 +246,23 @@ useEffect(() => {
           className="w-8 rounded-full"
         />
 
-        <p className="flex-1 text-lg text-white flex items-center gap-2">
-          {selectedUser?.name}
-          {onlineUsers.includes(selectedUser._id)&&
-          <span className="w-2 h-2 rounded-full bg-green-500"></span>}
-        </p>
+       <div className="flex-1">
 
+    <p className="text-lg text-white flex items-center gap-2">
+        {selectedUser?.name}
+
+        {onlineUsers.includes(selectedUser._id) && (
+            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+        )}
+    </p>
+
+    {typingUser && (
+        <p className="text-sm text-green-400 italic">
+            {selectedUser?.name} is typing...
+        </p>
+    )}
+
+</div>
         <img
           onClick={() => setSelectedUser(null)}
           src={assets.arrow_icon}
@@ -513,7 +551,7 @@ Cancel
 
       <div className="absolute bottom-0 left-0 right-0 flex items-center gap-3 p-3">
         <div className="flex-1 flex items-center bg-gray-100/12 px-3 rounded-full">
-          <input onChange={(e)=>setInput(e.target.value)} value={input} onKeyDown={(e)=>{
+          <input onChange={handleTyping} value={input} onKeyDown={(e)=>{
             if(e.key==='Enter'){
               handleSendMessage(e);
               setInput("");

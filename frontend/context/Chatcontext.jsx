@@ -15,6 +15,8 @@ export const ChatProvider=({children})=>{
     const[unseenMessages,setUnseenMessages]=useState({});
     const {socket,axios}=useAuth();
     const [suggestions,setSuggestions]=useState([]);
+        const [typingUser, setTypingUser] = useState("");
+
 
 const {getReplies}=useAI();
 
@@ -154,56 +156,53 @@ const deleteMessage = async (messageId) => {
 };
 
 // Function to subscribe to incoming messages
-const subscribeToMessages = async() => {
+const subscribeToMessages = async () => {
 
-    // If socket connection is not established, do nothing
     if (!socket) return;
 
-    // Listen for the "newMessage" event from the server
+    // ==========================
+    // New Message
+    // ==========================
     socket.on("newMessage", async (newMessage) => {
 
-        // Check if the currently selected user is the sender
         if (
             selectedUser &&
             newMessage.senderId === selectedUser._id
         ) {
 
-            // Since this chat is open, mark the message as seen
             newMessage.seen = true;
 
-            // Add the new message to the existing messages
-            setMessages((prevMessages) => [
-                ...prevMessages,
+            setMessages((prev) => [
+                ...prev,
                 newMessage,
             ]);
 
-           await axios.put(`/api/messages/markAsSeen/${newMessage._id}`);
-        }
-        else {
-            // Add the new message to the existing messages
-            setUnseenMessages((prevUnseenMessages) => ({
-                ...prevUnseenMessages,
-[newMessage.senderId]:
-  prevUnseenMessages[newMessage.senderId]
-    ? prevUnseenMessages[newMessage.senderId] + 1
-    : 1            }));
-            setMessages((prevMessages) => [
-                ...prevMessages,
+            await axios.put(
+                `/api/messages/markAsSeen/${newMessage._id}`
+            );
+
+        } else {
+
+            setUnseenMessages((prev) => ({
+                ...prev,
+                [newMessage.senderId]:
+                    prev[newMessage.senderId]
+                        ? prev[newMessage.senderId] + 1
+                        : 1,
+            }));
+
+            setMessages((prev) => [
+                ...prev,
                 newMessage,
             ]);
+
         }
-    });
-
-    const subscribeToMessages = async () => {
-
-    if (!socket) return;
-
-    socket.on("newMessage", async (newMessage) => {
-
-        // existing code
 
     });
 
+    // ==========================
+    // New Reaction
+    // ==========================
     socket.on("newReaction", (updatedMessage) => {
 
         setMessages((prev) =>
@@ -216,35 +215,73 @@ const subscribeToMessages = async() => {
 
     });
 
+    // ==========================
+    // Seen Messages
+    // ==========================
     socket.on("messagesSeen", (seenMessages) => {
 
-    setMessages((prev) =>
-        prev.map((msg) => {
+        setMessages((prev) =>
+            prev.map((msg) => {
 
-            const seenMessage = seenMessages.find(
-                (m) => m._id === msg._id
-            );
+                const seenMessage = seenMessages.find(
+                    (m) => m._id === msg._id
+                );
 
-            return seenMessage ? seenMessage : msg;
+                return seenMessage
+                    ? seenMessage
+                    : msg;
 
-        })
-    );
+            })
+        );
 
-});
+    });
+
+    // ==========================
+    // Typing Indicator
+    // ==========================
+    socket.on("typing", (senderName) => {
+
+        console.log("🔥 RECEIVED TYPING");
+        console.log(senderName);
+
+        setTypingUser(senderName);
+
+    });
+
+    socket.on("stopTyping", () => {
+
+        console.log("🛑 STOP TYPING");
+
+        setTypingUser("");
+
+    });
 
 };
-};
 
 
+// Remove all listeners
 const unsubscribeFromMessages = () => {
-    // If socket connection is not established, do nothing
+
     if (!socket) return;
 
-    // Remove the "newMessage" event listener from the server
     socket.off("newMessage");
     socket.off("newReaction");
     socket.off("messagesSeen");
+    socket.off("typing");
+    socket.off("stopTyping");
+
 };
+
+
+useEffect(() => {
+
+    subscribeToMessages();
+
+    return () => {
+        unsubscribeFromMessages();
+    };
+
+}, [socket, selectedUser]);
 
 useEffect(() => {
     // Subscribe to messages when the component mounts
@@ -270,6 +307,7 @@ useEffect(() => {
         editMessage,
         reactToMessage,
 deleteMessage,
+typingUser
 
 
     }
